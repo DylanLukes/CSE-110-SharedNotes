@@ -30,11 +30,15 @@ public class NoteViewModel extends AndroidViewModel {
         if (note == null) {
             note = repo.getLocal(title);
         }
+
+//        note = repo.getRemote(title); UNCOMMENT
+
         return note;
     }
 
     public void save(Note note) {
         // TODO: try to upload the note to the server.
+//        repo.upsertRemote(note);  UNCOMMENT
         repo.upsertLocal(note);
     }
 }
