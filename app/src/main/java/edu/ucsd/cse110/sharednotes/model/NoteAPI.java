@@ -2,9 +2,14 @@ package edu.ucsd.cse110.sharednotes.model;
 
 import android.util.Log;
 
+import androidx.annotation.AnyThread;
+import androidx.annotation.MainThread;
+import androidx.annotation.WorkerThread;
+
 import com.google.gson.Gson;
 
-import java.net.URLEncoder;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -17,17 +22,16 @@ public class NoteAPI {
     // TODO: Read the docs: https://sharednotes.goto.ucsd.edu/docs
 
     private volatile static NoteAPI instance = null;
-    private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
-
 
     private OkHttpClient client;
+
+    private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     private final Gson gson;
-
-
     public NoteAPI() {
         this.client = new OkHttpClient();
         this.gson = new Gson();
     }
+
 
     public static NoteAPI provide() {
         if (instance == null) {
@@ -40,13 +44,17 @@ public class NoteAPI {
      * An example of sending a GET request to the server.
      *
      * The /echo/{msg} endpoint always just returns {"message": msg}.
+     *
+     * This method should can be called on a background thread (Android
+     * disallows network requests on the main thread).
      */
-    public void echo(String msg) {
+    @WorkerThread
+    public String echo(String msg) {
         // URLs cannot contain spaces, so we replace them with %20.
-        msg = msg.replace(" ", "%20");
+        String encodedMsg = msg.replace(" ", "%20");
 
         var request = new Request.Builder()
-                .url("https://sharednotes.goto.ucsd.edu/echo/" + msg)
+                .url("https://sharednotes.goto.ucsd.edu/echo/" + encodedMsg)
                 .method("GET", null)
                 .build();
 
@@ -54,9 +62,20 @@ public class NoteAPI {
             assert response.body() != null;
             var body = response.body().string();
             Log.i("ECHO", body);
+            return body;
         } catch (Exception e) {
             e.printStackTrace();
+            return null;
         }
+    }
+
+    @AnyThread
+    public Future<String> echoAsync(String msg) {
+        var executor = Executors.newSingleThreadExecutor();
+        var future = executor.submit(() -> echo(msg));
+
+        // We can use future.get(1, SECONDS) to wait for the result.
+        return future;
     }
     /**
      * Sends a PUT request to the server to update or create the note.
@@ -111,4 +130,5 @@ public class NoteAPI {
             return null;
         }
     }
+
 }

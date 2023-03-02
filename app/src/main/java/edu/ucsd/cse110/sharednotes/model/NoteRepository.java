@@ -1,6 +1,5 @@
 package edu.ucsd.cse110.sharednotes.model;
 
-import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -19,6 +18,7 @@ public class NoteRepository {
         this.dao = dao;
         this.api = NoteAPI.provide();
     }
+
 
     // Synced Methods
     // ==============
@@ -39,6 +39,7 @@ public class NoteRepository {
 
         Observer<Note> updateFromRemote = theirNote -> {
             var ourNote = note.getValue();
+            if (theirNote == null) return; // do nothing
             if (ourNote == null || ourNote.updatedAt < theirNote.updatedAt) {
                 upsertLocal(theirNote);
             }
@@ -66,10 +67,9 @@ public class NoteRepository {
 
     public LiveData<List<Note>> getAllLocal() {
         return dao.getAll();
-
     }
 
-    public void upsertLocal(@NonNull Note note) {
+    public void upsertLocal(Note note) {
         note.updatedAt = System.currentTimeMillis();
         dao.upsert(note);
     }
@@ -124,4 +124,5 @@ public class NoteRepository {
         api.put(note);
         //throw new UnsupportedOperationException("Not implemented yet");
     }
+
 }
