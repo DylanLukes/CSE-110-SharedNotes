@@ -35,7 +35,7 @@ public class NoteAPI {
             return response.body().string();
         }
     }
-    String post(String url, String json) throws IOException {
+    String post(String url, String json)  {
         RequestBody body = RequestBody.create(json, JSON);
         Request request = new Request.Builder()
                 .url(url)
@@ -43,10 +43,29 @@ public class NoteAPI {
                 .build();
         try (Response response = client.newCall(request).execute()) {
             return response.body().string();
+        } catch (Exception e){
+            e.printStackTrace();
         }
+        return null;
     }
 
 
+    Note get(String title){
+        title = title.replace(" ", "%20");
+        var request = new Request.Builder()
+                .url("https://sharednotes.goto.ucsd.edu/notes/" +title)
+                .method("GET", null)
+                .build();
+
+        try (var response = client.newCall(request).execute()) {
+            assert response.body() != null;
+            var body = response.body().string();
+            return Note.fromJSON(body);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
     public static NoteAPI provide() {
         if (instance == null) {
